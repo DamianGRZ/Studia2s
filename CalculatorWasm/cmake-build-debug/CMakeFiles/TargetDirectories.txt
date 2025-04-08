@@ -1,0 +1,3 @@
+S:/Programming/Repo/DamianGRZ/Studia2s/CalculatorWasm/cmake-build-debug/CMakeFiles/CalculatorWasm.dir
+S:/Programming/Repo/DamianGRZ/Studia2s/CalculatorWasm/cmake-build-debug/CMakeFiles/edit_cache.dir
+S:/Programming/Repo/DamianGRZ/Studia2s/CalculatorWasm/cmake-build-debug/CMakeFiles/rebuild_cache.dir

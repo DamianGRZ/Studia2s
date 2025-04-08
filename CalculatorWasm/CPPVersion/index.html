@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebAssembly Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        input[type="button"] {
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+            margin: 5px;
+        }
+        #output {
+            margin-top: 20px;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+<h1>Simple WebAssembly Calculator</h1>
+
+<div id="calculator">
+    <input type="button" value="1" onclick="appendNumber(1)">
+    <input type="button" value="2" onclick="appendNumber(2)">
+    <input type="button" value="3" onclick="appendNumber(3)">
+    <input type="button" value="+" onclick="setOperation('+')"><br>
+
+    <input type="button" value="4" onclick="appendNumber(4)">
+    <input type="button" value="5" onclick="appendNumber(5)">
+    <input type="button" value="6" onclick="appendNumber(6)">
+    <input type="button" value="-" onclick="setOperation('-')"><br>
+
+    <input type="button" value="7" onclick="appendNumber(7)">
+    <input type="button" value="8" onclick="appendNumber(8)">
+    <input type="button" value="9" onclick="appendNumber(9)">
+    <input type="button" value="*" onclick="setOperation('*')"><br>
+
+    <input type="button" value="0" onclick="appendNumber(0)">
+    <input type="button" value="C" onclick="clearDisplay()">
+    <input type="button" value="/" onclick="setOperation('/')">
+    <input type="button" value="=" onclick="calculate()"><br>
+</div>
+
+<div id="output">Result: 0</div>
+
+<script src="calculator.js"></script>
+<script>
+    let wasmCalculator;
+
+    // Initialize the WebAssembly module
+    WebAssembly.instantiateStreaming(fetch("calculator.wasm"))
+        .then(result => {
+            wasmCalculator = result.instance;
+            console.log("WebAssembly module loaded");
+        })
+        .catch(e => console.error("Error loading WebAssembly module:", e));
+
+    let currentInput = '';
+    let operation = null;
+    let previousValue = null;
+
+    function appendNumber(number) {
+        currentInput += number.toString();
+        updateOutput(currentInput);
+    }
+
+    function setOperation(op) {
+        if (previousValue !== null && currentInput !== '') {
+            calculate();
+        }
+        operation = op;
+        previousValue = parseInt(currentInput);
+        currentInput = '';
+    }
+
+    function calculate() {
+        if (wasmCalculator) {
+            let result;
+            const a = previousValue;
+            const b = parseInt(currentInput);
+            if (operation === '+') {
+                result = wasmCalculator.exports.add(a, b);
+            } else if (operation === '-') {
+                result = wasmCalculator.exports.subtract(a, b);
+            } else if (operation === '*') {
+                result = wasmCalculator.exports.multiply(a, b);
+            } else if (operation === '/') {
+                result = wasmCalculator.exports.divide(a, b);
+            }
+            currentInput = result.toString();
+            operation = null;
+            previousValue = null;
+            updateOutput(currentInput);
+        }
+    }
+
+    function clearDisplay() {
+        currentInput = '';
+        previousValue = null;
+        operation = null;
+        updateOutput('0');
+    }
+
+    function updateOutput(value) {
+        document.getElementById('output').innerText = 'Result: ' + value;
+    }
+</script>
+</body>
+</html>
