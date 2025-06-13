@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Szczegóły ogłoszenia</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+<body class="p-4">
+
+<div id="listing-detail" class="mb-4"></div>
+<button id="edit-btn" class="btn btn-primary mb-3">Edytuj</button>
+<form id="edit-form" style="display: none;" class="mb-5"></form>
+
+<script>
+    async function showListingDetails(id) {
+        const response = await fetch(`/api/listings/${id}`);
+        if (!response.ok) {
+            document.getElementById('listing-detail').innerHTML = 'Nie znaleziono ogłoszenia';
+            return;
+        }
+
+        const data = await response.json();
+        const container = document.getElementById('listing-detail');
+        container.innerHTML = `
+        <h2>${data.name}</h2>
+        <p><strong>Cena:</strong> ${data.price} USD</p>
+        <p><strong>Typ pokoju:</strong> ${data.room_type}</p>
+        <p><strong>Typ nieruchomości:</strong> ${data.property_type}</p>
+        <p><strong>Opis:</strong> ${data.description || 'brak'}</p>
+        <p><strong>Liczba sypialni:</strong> ${data.bedrooms || 'brak'}</p>
+        <p><strong>Liczba łazienek:</strong> ${data.bathrooms || 'brak'}</p>
+        <p><strong>Miasto:</strong> ${data.address?.city || 'brak'}</p>
+        <p><strong>Kraj:</strong> ${data.address?.country || 'brak'}</p>
+      `;
+
+        document.getElementById('edit-btn').onclick = () => enableEditMode(data);
+    }
+
+    function enableEditMode(listing) {
+        const form = document.getElementById('edit-form');
+        form.innerHTML = '';
+
+        const fields = [
+            { name: 'name', label: 'Nazwa', value: listing.name },
+            { name: 'price', label: 'Cena', value: listing.price },
+            { name: 'room_type', label: 'Typ pokoju', value: listing.room_type },
+            { name: 'property_type', label: 'Typ nieruchomości', value: listing.property_type },
+            { name: 'description', label: 'Opis', value: listing.description },
+            { name: 'bedrooms', label: 'Sypialnie', value: listing.bedrooms },
+            { name: 'bathrooms', label: 'Łazienki', value: listing.bathrooms },
+            { name: 'address.city', label: 'Miasto', value: listing.address?.city },
+            { name: 'address.country', label: 'Kraj', value: listing.address?.country }
+        ];
+
+        fields.forEach(field => {
+            const input = document.createElement('input');
+            input.className = 'form-control mb-2';
+            input.name = field.name;
+            input.placeholder = field.label;
+            input.value = field.value || '';
+            form.appendChild(input);
+        });
+
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'btn btn-success mt-2';
+        saveBtn.textContent = 'Zapisz zmiany';
+        saveBtn.onclick = async (e) => {
+            e.preventDefault();
+
+            const updated = {};
+            [...form.elements].forEach(input => {
+                if (!input.name) return;
+                const value = input.value;
+                if (input.name.startsWith('address.')) {
+                    const key = input.name.split('.')[1];
+                    updated.address = updated.address || {};
+                    updated.address[key] = value;
+                } else {
+                    updated[input.name] = isNaN(value) || value === '' ? value : Number(value);
+                }
+            });
+
+            const response = await fetch(`/api/listings/${listing._id}?user=${listing.created_by}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updated)
+            });
+
+            if (response.ok) {
+                alert('Zaktualizowano!');
+                location.reload();
+            } else {
+                const err = await response.json();
+                alert('Błąd: ' + err.error);
+            }
+        };
+
+        form.appendChild(saveBtn);
+        form.style.display = 'block';
+    }
+
+    // Wywołanie na podstawie ID z URL
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    if (id) {
+        showListingDetails(id);
+    }
+</script>
+
+</body>
+</html>

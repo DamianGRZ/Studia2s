@@ -1,0 +1,818 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Airbnb Listings API",
+    "version": "1.0.0",
+    "description": "Dokumentacja API do pracy z kolekcją listingsAndReviews z MongoDB Atlas."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api/listings"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": ["Listing"],
+        "summary": "Zwróć wszystkie oferty (po 10 na stronę)",
+        "responses": {
+          "200": {
+            "description": "Zwraca paginowaną listę dokumentów listingsAndReviews",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Błąd – zły numer strony"
+          },
+          "500": {
+            "description": "Błąd serwera"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Listing"],
+        "summary": "Utwórz nową ofertę",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListingInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Oferta została dodana"
+          },
+          "400": {
+            "description": "Błąd walidacji"
+          },
+          "500": {
+            "description": "Błąd serwera"
+          }
+        }
+      }
+    },
+    "/{id}": {
+      "put": {
+        "tags": ["Listing"],
+        "summary": "Aktualizuj ofertę",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "host_id",
+            "in": "query",
+            "required": true,
+            "description": "Id hosta – host.host_id (musi zgadzać się z nazwą hosta w ogłoszeniu)",
+            "schema": {
+              "type": "string",
+              "example": "default_host_001"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListingInputUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Zaktualizowano"
+          },
+          "400": {
+            "description": "Błąd walidacji lub brak pól do aktualizacji"
+          },
+          "404": {
+            "description": "Ogłoszenie nie znalezione lub nie należy do hosta"
+          },
+          "500": {
+            "description": "Błąd serwera"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Listing"],
+        "summary": "Usuń ofertę",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usunięto"
+          }
+        }
+      },
+      "get": {
+        "tags": ["Listing"],
+        "summary": "Pobierz ofertę po ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID oferty (string)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Znaleziono ofertę",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nie znaleziono oferty"
+          }
+        }
+      }
+    },
+    "/my": {
+      "get": {
+        "tags": ["Listing"],
+        "summary": "Pobierz własne oferty użytkownika",
+        "parameters": [
+          {
+            "name": "host_id",
+            "in": "query",
+            "required": true,
+            "description": "Identyfikator hosta przypisany do ofert",
+            "schema": {
+              "type": "string",
+              "example": "default_host_001"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Zwrócono listę ofert użytkownika",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Brak wymaganych parametrów"
+          },
+          "500": {
+            "description": "Błąd serwera"
+          }
+        }
+      }
+    },
+    "/price/under/{max}": {
+      "get": {
+        "tags": ["Statistics"],
+        "summary": "Oferty tańsze niż max",
+        "parameters": [
+          {
+            "name": "max",
+            "in": "path",
+            "required": true,
+            "description": "Maksymalna cena oferty",
+            "schema": {
+              "type": "number",
+              "example": 200
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Numer strony (dla paginacji, domyślnie 1)",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "description": "Sortowanie po cenie (asc = rosnąco, desc = malejąco)",
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc"],
+              "example": "asc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista ofert tańszych niż podana cena",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ListingOutput"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{id}/reviews": {
+      "get": {
+        "summary": "Pobierz recenzje ogłoszenia",
+        "tags": [
+          "Reviews"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "1063491"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tablica recenzji",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "_id": {
+                        "type": "string",
+                        "example": "58663741"
+                      },
+                      "listing_id": {
+                        "type": "string",
+                        "example": "10006546"
+                      },
+                      "reviewer_id": {
+                        "type": "string",
+                        "example": "51483096"
+                      },
+                      "reviewer_name": {
+                        "type": "string",
+                        "example": "Cátia"
+                      },
+                      "date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2016-01-03"
+                      },
+                      "comments": {
+                        "type": "string",
+                        "example": "Bardzo miło."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ogłoszenie nie istnieje"
+          },
+          "500": {
+            "description": "Błąd serwera"
+          }
+        }
+      },
+      "post": {
+        "summary": "Dodaj recenzję do ogłoszenia",
+        "tags": ["Reviews"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "1063491"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["_id", "reviewer_id", "reviewer_name", "date", "comments"],
+                "properties": {
+                  "_id": {
+                    "type": "string",
+                    "example": "58663741"
+                  },
+                  "reviewer_id": {
+                    "type": "string",
+                    "example": "51483096"
+                  },
+                  "reviewer_name": {
+                    "type": "string",
+                    "example": "Cátia"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2016-01-03"
+                  },
+                  "comments": {
+                    "type": "string",
+                    "example": "A casa da Ana e do Gonçalo foram o local escolhido para a passagem de ano e foi uma excelente escolha!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Złe dane"
+          },
+          "404": {
+            "description": "Nie znaleziono"
+          },
+          "500": {
+            "description": "Błąd serwera"
+          }
+        }
+      }
+    },
+    "/{id}/amenities/add": {
+      "patch": {
+        "summary": "Dodaj pojedynczy amenity do listingu",
+        "tags": ["Amenities"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amenity": {
+                    "type": "string",
+                    "example": "WiFi"
+                  }
+                },
+                "required": ["amenity"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Amenity added successfully"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "404": {
+            "description": "Listing not found"
+          }
+        }
+      }
+    },
+    "/{id}/amenities/remove": {
+      "patch": {
+        "summary": "Usuń pojedynczy amenity z listingu",
+        "tags": ["Amenities"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amenity": {
+                    "type": "string",
+                    "example": "WiFi"
+                  }
+                },
+                "required": ["amenity"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Amenity removed successfully"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "404": {
+            "description": "Listing not found"
+          }
+        }
+      }
+    },
+    "/statistics/avg": {
+      "get": {
+        "tags": ["Statistics"],
+        "summary": "Średnia cena ofert",
+        "responses": {
+          "200": {
+            "description": "Zwraca średnią cenę"
+          }
+        }
+      }
+    },
+    "/statistics/count": {
+      "get": {
+        "tags": ["Statistics"],
+        "summary": "Liczba ofert",
+        "responses": {
+          "200": {
+            "description": "Zwraca liczbę dokumentów"
+          }
+        }
+      }
+    },
+    "/random": {
+      "get": {
+        "tags": ["Listing"],
+        "summary": "Losowa oferta",
+        "responses": {
+          "200": {
+            "description": "Zwraca losową ofertę"
+          }
+        }
+      }
+    },
+    "/filter-by-params": {
+      "get": {
+        "tags": ["Listing"],
+        "summary": "Filter listings by query parameters",
+        "parameters": [
+          {
+            "name": "beds",
+            "in": "query",
+            "description": "Minimum number of beds",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "example": 2
+            }
+          },
+          {
+            "name": "bedrooms",
+            "in": "query",
+            "description": "Minimum number of bedrooms",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Property type (e.g. Apartment)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "Apartment"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number for pagination",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          },
+          {
+            "name": "market",
+            "in": "query",
+            "description": "Rynek (np. Rio De Janeiro)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "Rio De Janeiro"
+            }
+          },
+          {
+            "name": "amenity",
+            "in": "query",
+            "description": "Udogodnienie (np. Wifi)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "Wifi"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Filtered listings returned"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/statistics/fields-summary": {
+      "get": {
+        "tags": ["Statistics"],
+        "summary": "Analiza występowania pól w dokumentach listings",
+        "responses": {
+          "200": {
+            "description": "Lista pól wraz z liczbą ich wystąpień i procentem",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalDocuments": {
+                      "type": "integer",
+                      "example": 22000
+                    },
+                    "fields": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "field": {
+                            "type": "string",
+                            "example": "name"
+                          },
+                          "count": {
+                            "type": "integer",
+                            "example": 21980
+                          },
+                          "percentage": {
+                            "type": "string",
+                            "example": "99.91%"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Błąd serwera"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Listing": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "name": { "type": "string" },
+          "price": { "type": "number" },
+          "address": { "type": "object" },
+          "amenities": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "ListingInput": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "example": "Cozy Apartment" },
+          "price": { "type": "number", "example": 120 },
+          "address": {
+            "type": "object",
+            "properties": {
+              "market": { "type": "string", "example": "Warsaw" },
+              "country": { "type": "string", "example": "Poland" },
+              "street": { "type": "string", "example": "Nowowiejska 10" },
+              "postal_code": { "type": "string", "example": "00-001" }
+            },
+            "required": ["market", "country"]
+          },
+          "amenities": {
+            "type": "array",
+            "items": { "type": "string" },
+            "example": ["WiFi", "Kitchen", "Heating"]
+          },
+          "room_type": { "type": "string", "example": "Entire home/apt" },
+          "property_type": { "type": "string", "example": "Apartment" },
+          "host": {
+            "type": "object",
+            "properties": {
+              "host_name": { "type": "string", "example": "John Doe" },
+              "host_verifications": {
+                "type": "array",
+                "items": { "type": "string" },
+                "example": ["email", "phone"]
+              }
+            },
+            "required": ["host_name", "host_verifications"]
+          }
+        },
+        "required": [
+          "name",
+          "price",
+          "address",
+          "amenities",
+          "room_type",
+          "property_type",
+          "host"
+        ]
+      },
+      "ListingInputUpdate": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "example": "Updated Premium Apartment" },
+          "price": { "type": "number", "example": 199 },
+          "address": {
+            "type": "object",
+            "properties": {
+              "market": { "type": "string", "example": "Warsaw" },
+              "country": { "type": "string", "example": "Poland" },
+              "street": { "type": "string", "example": "Koszykowa 123" },
+              "postal_code": { "type": "string", "example": "00-001" }
+            }
+          },
+          "amenities": {
+            "type": "array",
+            "items": { "type": "string" },
+            "example": ["WiFi", "Balcony", "Elevator"]
+          },
+          "room_type": { "type": "string", "example": "Entire home/apt" },
+          "property_type": { "type": "string", "example": "Apartment" },
+          "description": { "type": "string", "example": "Stylowe mieszkanie z balkonem" },
+          "summary": { "type": "string", "example": "Kompaktowe mieszkanie w centrum" },
+          "space": { "type": "string", "example": "35m2 + balkon" },
+          "neighborhood_overview": { "type": "string", "example": "Spokojna okolica" },
+          "notes": { "type": "string", "example": "Zwierzęta niedozwolone" },
+          "transit": { "type": "string", "example": "Blisko metro" },
+          "access": { "type": "string", "example": "Całe mieszkanie do dyspozycji" },
+          "interaction": { "type": "string", "example": "Dostępność przez telefon" },
+          "bed_type": { "type": "string", "example": "Double bed" },
+          "last_scraped": { "type": "string", "example": "2024-01-01" },
+          "calendar_last_scraped": { "type": "string", "example": "2024-01-02" },
+          "accommodates": { "type": "integer", "example": 4 },
+          "extra_people": { "type": "number", "example": 20 },
+          "guests_included": { "type": "number", "example": 2 },
+          "images": {
+            "type": "object",
+            "properties": {
+              "thumbnail_url": { "type": "string", "example": "https://example.com/thumb.jpg" },
+              "medium_url": { "type": "string", "example": "https://example.com/medium.jpg" },
+              "picture_url": { "type": "string", "example": "https://example.com/pic.jpg" },
+              "xl_picture_url": { "type": "string", "example": "https://example.com/xl.jpg" }
+            }
+          },
+          "minimum_nights": { "type": "integer", "example": 2 },
+          "maximum_nights": { "type": "integer", "example": 14 },
+          "number_of_reviews": { "type": "integer", "example": 120 },
+          "beds": { "type": "integer", "example": 2 },
+          "bedrooms": { "type": "integer", "example": 1 },
+          "bathrooms": { "type": "number", "example": 1 },
+          "availability": {
+            "type": "object",
+            "example": {
+              "availability_30": 28,
+              "availability_60": 56,
+              "availability_90": 85,
+              "availability_365": 300
+            }
+          },
+          "listing_url": { "type": "string", "example": "https://example.com/listing" },
+          "review_scores": {
+            "type": "object",
+            "example": {
+              "accuracy": 9,
+              "cleanliness": 10,
+              "location": 10,
+              "value": 9
+            }
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "example": {
+                "reviewer_name": "Anna",
+                "comments": "Super pobyt!"
+              }
+            }
+          },
+          "first_review": { "type": "string", "example": "2024-01-15" },
+          "last_review": { "type": "string", "example": "2024-04-10" },
+          "cleaning_fee": { "type": "number", "example": 50 },
+          "security_deposit": { "type": "number", "example": 150 },
+          "weekly_price": { "type": "number", "example": 700 },
+          "cancellation_policy": { "type": "string", "example": "moderate" },
+          "house_rules": { "type": "string", "example": "Nie palić" },
+          "location": {
+            "type": "object",
+            "properties": {
+              "longitude": { "type": "number", "example": 21.0122 },
+              "latitude": { "type": "number", "example": 52.2297 }
+            }
+          },
+          "host": {
+            "type": "object",
+            "properties": {
+              "host_name": { "type": "string", "example": "John Doe" },
+              "host_verifications": {
+                "type": "array",
+                "items": { "type": "string" },
+                "example": ["email", "phone"]
+              }
+            }
+          }
+        }
+      },
+      "ListingOutput": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string", "example": "664a23a2c0320b32e49e1f6e" },
+          "name": { "type": "string", "example": "Nowoczesne Studio" },
+          "price": { "type": "number", "example": 150 },
+          "address": {
+            "type": "object",
+            "properties": {
+              "street": { "type": "string", "example": "Nowowiejska 10" },
+              "market": { "type": "string", "example": "Warsaw" },
+              "country": { "type": "string", "example": "Poland" }
+            }
+          },
+          "amenities": {
+            "type": "array",
+            "items": { "type": "string" },
+            "example": ["WiFi", "TV", "Air conditioning"]
+          }
+        }
+      }
+    }
+  }
+}

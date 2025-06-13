@@ -1,0 +1,21 @@
+{
+  "name": "MongoDB_AdvancedDatabases",
+  "version": "1.0.0",
+  "description": "Prosty backend Node.js z MongoDB i Swagger UI dla kolekcji sample_airbnb.listingsAndReviews",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "express": "^4.18.2",
+    "mongodb": "^5.9.2",
+    "swagger-ui-express": "^4.6.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "author": "",
+  "license": "MIT"
+}

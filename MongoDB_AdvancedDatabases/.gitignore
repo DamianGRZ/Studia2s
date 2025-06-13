@@ -1,0 +1,21 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# dotenv
+.env
+
+# Docker
+data/
+*.local
+docker-compose.override.yml
+
+# WebStorm / JetBrains IDE
+.idea/
+*.iml
+
+# OS / systemowe
+.DS_Store
+Thumbs.db
